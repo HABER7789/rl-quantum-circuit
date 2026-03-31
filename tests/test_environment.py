@@ -29,13 +29,15 @@ class TestH2Hamiltonian:
     def test_build_2q_equilibrium(self):
         ham, e0 = build_h2_hamiltonian_2q(0.735)
         assert ham.num_qubits == 2
-        assert abs(e0 - (-1.8572)) < 0.001, f"Expected ~-1.8572 Ha, got {e0}"
+        # reference energy of our parity-reduced 2Q encoding, NOT the full-CI -1.8572 Ha
+        assert abs(e0 - (-1.9154)) < 0.001, f"Expected ~-1.9154 Ha (2Q parity encoding), got {e0}"
 
     def test_exact_diagonalization_matches_hardcoded(self):
         ham, e0_hardcoded = build_h2_hamiltonian_2q(0.735)
         e0_exact = exact_ground_state_energy(ham)
-        assert abs(e0_exact - e0_hardcoded) < 1e-2, (
-            f"Exact diag {e0_exact:.4f} vs hardcoded {e0_hardcoded:.4f} — too far apart"
+        # tight now because H2_GROUND_STATE_2Q is derived from these same coefficients
+        assert abs(e0_exact - e0_hardcoded) < 1e-4, (
+            f"Exact diag {e0_exact:.6f} vs hardcoded {e0_hardcoded:.6f} — these should match to 4 decimal places"
         )
 
     def test_hamiltonian_is_hermitian(self):
@@ -85,9 +87,12 @@ class TestMaxCutHamiltonian:
         assert np.allclose(mat, mat.conj().T, atol=1e-10)
 
     def test_zz_pauli_string_little_endian(self):
-        # took a while to get this right — qubit 0 is rightmost char
+        # Qiskit is little-endian: qubit k occupies position (n-1-k) in the string.
+        # So the rightmost character = qubit 0, second-from-right = qubit 1, etc.
+        # For n=4, qubit 0 → position 3, qubit 2 → position 1.
+        # Result should be ['I','Z','I','Z'] joined = 'IZIZ'.
         s = _make_zz_string(4, 0, 2)
-        assert s == "ZIZI", f"Expected 'ZIZI', got '{s}' — check little-endian ordering!"
+        assert s == "IZIZ", f"Expected 'IZIZ', got '{s}' — qubit 0 is rightmost, not leftmost!"
 
     def test_brute_force_path_graph(self):
         import networkx as nx

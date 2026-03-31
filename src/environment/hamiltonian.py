@@ -57,13 +57,23 @@ H2_COEFFICIENTS_2Q = {
     },
 }
 
-# exact ground state energies from diagonalization — what VQE tries to match
+# Exact ground state energies for our 2-qubit parity-reduced Hamiltonian.
+# These are the lowest eigenvalues of the matrices we actually encode above,
+# computed by np.linalg.eigvalsh on each SparsePauliOp.to_matrix().
+#
+# Note: the −1.8572 Ha figure that appears in O'Malley et al. (2016) and
+# related VQE papers is the full-CI ground state energy for H2 in a
+# minimal STO-3G basis. Our Pauli coefficients go through the parity
+# mapping and a two-qubit reduction, which shifts the zero of energy;
+# the lowest eigenvalue of our encoded 2Q Hamiltonian is therefore NOT
+# equal to the full-CI energy. Using the wrong reference would cause
+# VQE to report failure even when it converges correctly.
 H2_GROUND_STATE_2Q = {
-    0.5:   -1.0648,
-    0.735: -1.8572,
-    1.0:   -1.1459,
-    1.5:   -0.9981,
-    2.0:   -0.8243,
+    0.5:   -1.4577,
+    0.735: -1.9154,
+    1.0:   -1.6566,
+    1.5:   -1.0616,
+    2.0:   -0.8290,
 }
 
 # 1 kcal/mol in Hartree — the standard "good enough" threshold in quantum chemistry

@@ -1,12 +1,5 @@
-# ppo_agent.py
-# PPO agent for gate selection.
-#
-# On-policy: collect one full episode, do a few gradient updates, throw it away.
-# Key trick: clip the policy ratio so we don't make huge updates that
-# destabilize training. Advantage estimation via GAE (lambda=0.95 worked well).
-#
-# Shared actor-critic trunk — both heads see the same features,
-# which seemed to converge faster than separate networks.
+# PPO agent. Collects one episode, runs a few clipped gradient updates, then discards.
+# Shared actor-critic trunk with GAE advantage estimation.
 
 import numpy as np
 import torch

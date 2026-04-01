@@ -1,11 +1,5 @@
-# dqn_agent.py
-# Double DQN agent for discrete gate selection.
-#
-# DDQN vs plain DQN: regular DQN uses one network for both selecting AND
-# evaluating the best next action, which causes overestimation. DDQN splits
-# that — online net picks the action, target net evaluates it.
-# Target net is a delayed copy that only syncs every N steps, which
-# stabilizes training quite a bit.
+# Double DQN agent. Online net picks actions, target net evaluates them.
+# Target syncs every N steps to reduce overestimation bias.
 
 import copy
 import numpy as np

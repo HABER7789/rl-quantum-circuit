@@ -6,17 +6,17 @@
 
 ## What we have done so far
 
-We have completed the full Phase 1 codebase and run the first round of training experiments.
+We finished the full Phase 1 codebase and ran the first round of training experiments.
 
-**Environment and Hamiltonians.** The core RL environment (`src/environment/circuit_env.py`) is a custom Gymnasium environment where the agent adds one gate per step from the set {Rx, Ry, Rz, CNOT}. After each gate, COBYLA finds the best rotation angles, and the reward is the resulting energy decrease. We implement two tasks: H2 ground-state energy using the 2-qubit parity-reduced Hamiltonian from O'Malley et al. [1], and MaxCut using the standard Ising formulation. Both are unit tested — we now have **28/28 tests passing**.
+**Environment and Hamiltonians.** The core RL environment (`src/environment/circuit_env.py`) is a custom Gymnasium environment where the agent adds one gate at a time from {Rx, Ry, Rz, CNOT}. After each gate is placed, COBYLA finds the best rotation angles and the reward is the resulting energy decrease. We have two tasks: H2 ground-state energy using the 2-qubit parity-reduced Hamiltonian from O'Malley et al. [1], and MaxCut using the standard Ising formulation. Both are unit tested; all **28/28 tests now pass**.
 
-We had a bug worth documenting: we initially seeded `H2_GROUND_STATE_2Q` with the full-CI energy (−1.8572 Ha at R=0.735 Å) reported in [1], but our Pauli coefficients go through the parity reduction and a two-qubit tapering, which shifts the zero of energy. The correct reference for our encoding is the smallest eigenvalue of the matrix we actually encode, which is −1.9154 Ha. The fix was to update the lookup table to values obtained by exact diagonalization (`np.linalg.eigvalsh`) of each SparsePauliOp. This is not a science error — our quantum chemistry is unchanged — but it was causing VQE to compare its output against the wrong target, making every episode look like a failure.
+There was a bug worth documenting. We initially set `H2_GROUND_STATE_2Q` to the full-CI energy of −1.8572 Ha (at R=0.735 Å) from [1], but our Pauli coefficients go through the parity reduction and two-qubit tapering, which shifts the zero of energy. The correct reference for our encoding is the smallest eigenvalue of the matrix we actually diagonalize, which turns out to be −1.9154 Ha. We fixed this by computing ground state energies via exact diagonalization (`np.linalg.eigvalsh`) at each bond distance and updating the lookup table. The quantum chemistry is unchanged (the H2 Hamiltonian is still the same), but we were comparing VQE output against the wrong target, which made every episode look like a failure.
 
-**Agents.** We implemented Double DQN (DDQN) [2] and PPO with GAE [3] in `src/agents/`. DDQN uses a replay buffer and a delayed target network that syncs every 200 steps. PPO collects one full episode, computes advantages using GAE (λ=0.95), and runs 4 epochs of clipped gradient updates (ε=0.2). Both agents are designed following Ostaszewski et al. [4], who showed DDQN works well for discrete gate selection because each gate choice is a one-shot action with no continuous parameter.
+**Agents.** We implemented Double DQN (DDQN) [2] and PPO with GAE [3] in `src/agents/`. DDQN uses a replay buffer and a target network that syncs every 200 steps. PPO collects one full episode, computes advantages using GAE (λ=0.95), and runs 4 epochs of clipped gradient updates (ε=0.2). We followed Ostaszewski et al. [4] in using DDQN for gate selection; they showed it works better than policy gradient methods for discrete one-shot gate choices.
 
-**Training run.** We completed a 2000-episode DDQN run on H2 at R=0.735 Å. The checkpoint and full episode log are included in `checkpoints/` and `logs/`. The agent reliably reaches energies near −1.9154 Ha but does not yet consistently cross the chemical accuracy threshold (0.0016 Ha = 1 kcal/mol) — we believe this is a hyperparameter issue (depth budget of 10 gates may be too tight) that we plan to address next.
+**Training run.** We ran 2000 episodes of DDQN on H2 at R=0.735 Å. The checkpoint and full episode log are in `checkpoints/` and `logs/`. The agent gets close to −1.9154 Ha but does not consistently hit chemical accuracy (0.0016 Ha = 1 kcal/mol). We think the depth budget of 10 gates is too tight and plan to relax it.
 
-**Baselines.** All three baseline methods are implemented and verified to run:
+**Baselines.** All three baselines are implemented and verified:
 
 | Method | Energy (Ha) | Error (Ha) | Depth | Succeeded |
 |---|---|---|---|---|
@@ -24,35 +24,35 @@ We had a bug worth documenting: we initially seeded `H2_GROUND_STATE_2Q` with th
 | Genetic algorithm (gen=30, pop=20) | −1.915371 | 0.000029 | 7 | Yes |
 | HE ansatz (L=2, 5 COBYLA restarts) | −1.915371 | 0.000029 | 8 | Yes |
 
-All three reach chemical accuracy on H2 2Q without learning. This is partly expected for such a small system — 2 qubits with a well-known UCCSD-like structure almost any flexible optimizer can find. The interesting comparison will come when we extend to more bond distances and larger graphs, where fixed-structure methods struggle more.
+All three reach chemical accuracy on H2 2Q without any learning. This is not too surprising for a 2-qubit system; the search space is small enough that almost any optimizer with a flexible enough circuit will find it. The real comparison will be at multiple bond distances and on larger MaxCut graphs, where fixed-structure methods are harder to tune.
 
-**Tests.** The full test suite covers Hamiltonian correctness, Hermiticity, MaxCut Ising energy identity, VQE convergence, state encoding, action decoding, episode termination logic, and a full random episode smoke test.
+**Tests.** The test suite covers Hamiltonian correctness, Hermiticity, MaxCut Ising energy identity, VQE convergence, state encoding, action decoding, episode termination, and a full random episode smoke test.
 
 ---
 
 ## Next steps
 
-1. Fix the DDQN hyperparameters: extend max depth from 10 to 15, lower epsilon decay to allow longer exploration.
-2. Run training across all 5 H2 bond distances and compare RL against the baselines at each distance.
+1. Extend max gate depth from 10 to 15 and slow down epsilon decay to give the agent more room to explore.
+2. Run training across all 5 H2 bond distances and compare RL against baselines at each one.
 3. Start MaxCut experiments on C4, K4, and 4-node random graphs.
-4. Add a short analysis notebook with reward curves, energy convergence plots, and the baseline comparison table.
-5. Run PPO training and compare convergence speed against DDQN.
+4. Build a short analysis notebook with reward curves, energy convergence plots, and the baseline comparison table.
+5. Run PPO training and compare convergence with DDQN.
 
 ---
 
 ## Challenges and decisions
 
-The main surprise was the Hamiltonian reference energy issue described above. It wasted some debugging time but the fix is correct and documented in the code.
+The Hamiltonian reference energy issue took the most debugging time. We were getting failing tests and strange reward signals before tracing the problem to the mismatch between the literature energy and the eigenvalue of our reduced operator. The fix is correct and is now documented in the code.
 
-We are sticking with statevector simulation throughout. IBM device queues are typically 1–24 hours per job, and shot noise during early random exploration would make the reward signal meaningless. The Ostaszewski et al. paper and essentially all VQE RL results in the literature use noiseless simulation [4]. For ≤5 qubits, exact expectation values are fast and informative.
+We decided to stick with statevector simulation throughout. IBM device queues are typically 1–24 hours per job, and shot noise during random exploration early in training would make the reward signal noisy enough to break learning. Every VQE RL paper we found uses noiseless simulation [4], and for circuits with 5 or fewer qubits, exact expectation values are fast.
 
-The 2-qubit H2 reduction was a deliberate choice. The parity-reduced form [1] is well-validated in the VQE literature and reduces qubit count from 4 (Jordan-Wigner) to 2, which matters because each COBYLA call inside the environment re-evaluates the full circuit, and training involves thousands of episodes.
+The 2-qubit H2 reduction was a deliberate choice. The parity-reduced form [1] is well-validated in the VQE literature and cuts the qubit count from 4 (Jordan-Wigner) to 2. This matters because COBYLA runs inside the environment at every step, so lower qubit count means faster per-episode wall time.
 
 ---
 
 ## Plan for the next month
 
-We will spend the next two weeks finishing training experiments across all bond distances and tasks, then analyze results and write the final report. The core infrastructure (environment, agents, baselines, metrics) is complete and working, so the remaining effort is running experiments, interpreting results, and writing. We expect the final comparison to show DDQN outperforming random search and matching the HE ansatz on H2 2Q, with a clearer advantage on larger MaxCut graphs where the search space grows.
+The next two weeks will go toward training experiments across all bond distances and MaxCut graphs, followed by analysis and writing. The environment, agents, baselines, and metrics are all working, so the remaining work is running the experiments, interpreting the results, and writing up what we find. We expect DDQN to match or slightly outperform random search on H2 2Q, and to show a larger advantage on MaxCut graphs where the action space is bigger.
 
 ---
 

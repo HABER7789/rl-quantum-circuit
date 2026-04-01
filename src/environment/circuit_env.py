@@ -1,18 +1,6 @@
-# circuit_env.py
-# The RL environment. Agent builds a quantum circuit one gate at a time.
-#
-# Each episode: start with empty circuit, agent picks gates, we run COBYLA
-# after each gate to find the best angles, reward = energy improvement.
-# Episode ends when we hit chemical accuracy (success) or run out of depth.
-#
-# State: flat one-hot vector over gate slots
-#   Each slot: [5 gate types | n target qubits | n+1 control/none]
-#
-# Actions: discrete
-#   [0, n)     → Rx on qubit i
-#   [n, 2n)    → Ry on qubit i
-#   [2n, 3n)   → Rz on qubit i
-#   [3n, ...)  → CNOT(ctrl, tgt)
+# Gymnasium env where the agent builds a quantum circuit gate by gate.
+# Reward = energy decrease after each step. Episode ends at chemical accuracy or max depth.
+# State: one-hot over gate slots (type + target + control). Actions: Rx/Ry/Rz per qubit + CNOT pairs.
 
 from __future__ import annotations
 

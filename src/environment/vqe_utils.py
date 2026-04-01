@@ -1,12 +1,5 @@
-# vqe_utils.py
-# VQE machinery: build circuits, evaluate energies, run COBYLA.
-#
-# Flow: RL picks a gate → append to sequence → COBYLA finds best angles →
-# compute E(theta) = <psi(theta)|H|psi(theta)> → reward = delta_E
-#
-# Using statevector sim (no shot noise) since we're on a laptop and real
-# hardware is both slow and noisy. COBYLA because it's gradient-free and
-# worked better than gradient methods when we tested it.
+# VQE utils: build circuits, evaluate energies, run COBYLA optimization.
+# Uses statevector simulation (no shot noise). COBYLA for angle optimization.
 
 import numpy as np
 from scipy.optimize import minimize

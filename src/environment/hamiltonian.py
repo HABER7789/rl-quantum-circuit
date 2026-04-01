@@ -1,9 +1,5 @@
-# hamiltonian.py
-# Builds the Hamiltonians we optimize over — H2 molecule and MaxCut.
-#
-# Heads up: Qiskit uses little-endian qubit ordering, which is confusing.
-# In "ZII", the rightmost char is qubit 0. So "ZII" = Z on qubit 2.
-# I've added notes where this matters so we don't mess it up again.
+# H2 molecule and MaxCut Hamiltonians.
+# Note: Qiskit is little-endian. In "ZII", qubit 0 is the rightmost char.
 
 import numpy as np
 import networkx as nx

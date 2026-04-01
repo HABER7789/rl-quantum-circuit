@@ -2,41 +2,50 @@
 
 **CS 5100 | Dhairya Patel, Dhruv Kansara, Tisha Patel**
 
-A reinforcement learning agent that autonomously constructs quantum circuit ansätze for:
-1. **VQE** — Variational Quantum Eigensolver (H2 molecule ground state energy)
-2. **MaxCut** — Combinatorial optimization via Ising Hamiltonian minimization
+We built an RL agent that learns to construct quantum circuit ansätze from scratch, without assuming any fixed circuit structure. The agent is tested on two problems:
 
-## Setup and Running
+1. **VQE**: finding the ground state energy of H2 using the 2-qubit parity-reduced Hamiltonian
+2. **MaxCut**: combinatorial optimization via Ising Hamiltonian minimization
+
+The agent picks one gate per step from {Rx, Ry, Rz, CNOT}. After each gate is placed, COBYLA optimizes the rotation angles and returns the energy as feedback. Reward is the energy decrease at each step.
+
+## Setup
 
 ```bash
-# 1. Create and activate a virtual environment (Python 3.10+ required)
+# Python 3.10+ required
 python -m venv venv
-source venv/bin/activate      # on Windows: venv\Scripts\activate
-
-# 2. Install dependencies
+source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+```
 
-# 3. Run tests to verify everything is set up correctly
-pytest tests/ -v
+## Running
 
-# 4. Train the DDQN agent on H2
+```bash
+# verify everything is working
+PYTHONPATH=. pytest tests/ -v
+
+# train DDQN on H2 (default config)
 python experiments/train.py --config config/default.yaml
 ```
 
-Training takes ~9 minutes (2000 episodes). Results are saved automatically to `checkpoints/` and `logs/`.
+Training runs for 2000 episodes and takes roughly 8-10 minutes. Checkpoints and logs go to `checkpoints/` and `logs/`.
 
-To switch to PPO, open `config/default.yaml` and change `type: "ddqn"` to `type: "ppo"`, then run the same command.
+To use PPO instead of DDQN, edit `config/default.yaml` and change `type: "ddqn"` to `type: "ppo"`.
 
-**Note on tests:** 3 out of 28 tests currently fail due to a minor mismatch between hardcoded H2 energy values and Qiskit's diagonalization result. This does not affect training.
-
-## Project Structure
+## Layout
 
 ```
-src/environment/   Hamiltonian builders, VQE utils, Gymnasium RL environment
-src/agents/        DDQN and PPO agents with replay buffer
-src/baselines/     Random search, genetic algorithm, HE/QAOA fixed ansätze
-src/evaluation/    Metrics (energy error, success rate, approximation ratio)
-experiments/       Training script (train.py)
-config/            YAML hyperparameter configs
-tests/             Verification tests
+src/environment/   Hamiltonian definitions, VQE circuit builder, Gymnasium env
+src/agents/        DDQN (with target network + replay buffer) and PPO (with GAE)
+src/baselines/     Random search, genetic algorithm, HE ansatz, QAOA
+src/evaluation/    Energy error, success rate, approximation ratio metrics
+experiments/       train.py (main entry point)
+config/            YAML configs for hyperparameters
+tests/             28 unit/integration tests, all passing
 ```
+
+## A note on tests
+
+Run tests with `PYTHONPATH=.` from the project root; pytest doesn't add the project root to the path by default.
+
+All 28 tests pass as of the current commit.

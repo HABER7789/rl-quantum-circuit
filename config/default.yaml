@@ -1,0 +1,54 @@
+# Default configuration for RL-VQE experiments
+# Override with task-specific configs (h2_ddqn.yaml, maxcut_ddqn.yaml, etc.)
+
+task:
+  name: "h2_vqe"           # "h2_vqe" or "maxcut"
+  n_qubits: 2
+  max_depth: 15
+  energy_threshold: 0.0016  # Chemical accuracy in Hartree (1 kcal/mol)
+
+# H2-specific settings (used when task.name == "h2_vqe")
+h2:
+  bond_distance: 0.735      # Angstrom
+  use_4q: false             # true = 4-qubit JW; false = 2-qubit reduced
+
+# MaxCut-specific settings (used when task.name == "maxcut")
+maxcut:
+  graph: "C4"               # "C4", "K4", "W4" or path to edge list file
+
+agent:
+  type: "ppo"              # "ddqn" or "ppo"
+  hidden_dim: 256
+
+ddqn:
+  gamma: 0.99
+  lr: 1.0e-3
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay: 20000
+  batch_size: 64
+  buffer_size: 50000
+  target_update: 200
+  min_buffer: 512
+
+ppo:
+  lr: 3.0e-4
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_eps: 0.2
+  n_epochs: 4
+  batch_size: 64
+  vf_coef: 0.5
+  ent_coef: 0.01
+  max_grad_norm: 0.5
+
+training:
+  n_episodes: 2000
+  cobyla_max_iter: 300
+  eval_interval: 100       # Evaluate greedy policy every N episodes
+  eval_episodes: 20
+  checkpoint_dir: "checkpoints"
+  log_dir: "logs"
+  seed: 42
+
+device: "cpu"              # "cpu" or "cuda"

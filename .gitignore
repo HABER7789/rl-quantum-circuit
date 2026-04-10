@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+checkpoints/
+*.pt
+.DS_Store
+
+# internal planning docs — not for submission
+PLAN.md
+TECHNICAL_REPORT.md

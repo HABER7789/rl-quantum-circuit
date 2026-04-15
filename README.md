@@ -2,7 +2,7 @@
 
 **CS 5100   Dhairya Patel, Dhruv Kansara, Tisha Patel**
 
-An RL agent that builds quantum circuit ansätze gate by gate. The agent picks one gate per step from {Rx, Ry, Rz, CNOT}. After each gate, COBYLA finds the best rotation angles and the reward is the resulting energy decrease. Tested on H2 ground-state energy (VQE) using the 2-qubit parity-reduced Hamiltonian.
+An Reinforcement Learning agent that builds quantum circuit ansätze gate by gate. The agent picks one gate per step from {Rx, Ry, Rz, CNOT}. After each gate, COBYLA finds the best rotation angles and the reward is the resulting energy decrease. Tested on H2 ground-state energy (VQE) using the 2-qubit parity-reduced Hamiltonian.
 
 ## Setup
 
